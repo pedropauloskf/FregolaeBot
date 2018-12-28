@@ -16,7 +16,17 @@ def insere_bd(carona):
     caronas_col.insert_one(carona)
     client.close()
 
-
+def busca_bd(tipo, chat_id):
+    client = MongoClient()
+    caronas_col = client.fregolae.caronas
+    res = caronas_col.find({"ativo":1,"tipo":tipo, "chat_id":chat_id})
+    client.close()
+    
+    msg = ""
+    for carona in res:
+        msg += carona["resp"] + " - " + carona["username"]+"\n"
+    return msg
+    
 def valida_horario(arg):
     l = len(arg)
     if l<6:
@@ -68,23 +78,34 @@ dispatcher.add_handler(start_handler)
 
 
 def ida(bot, update, args):
-    try:
-        
-        carona = valida_horario(args[0])
-        carona.update({"username": "@" + update.message.chat.username, 
-                               "tipo": 1,"ativo": 1})
-
+    
+    if len(args)==0:
+        tipo = 1
         try:
-            insere_bd(carona)
-            msg = "Carona de ida para as " + carona["resp"] + " oferecida por @" + update.message.chat.username 
-            bot.send_message(chat_id=update.message.from_user.id,text=msg)
+            lista= "**Caronas de Ida:**\n\n"
+            lista+= busca_bd(tipo, update.message.chat.id)
+            bot.send_message(chat_id=update.message.chat.id,text=lista)
         except:
-            msg = "Ocorreu um erro ao adicionar a carona. Tente novamente." 
+            msg = "Ocorreu um erro ao buscar a lista. Tente novamente." 
             bot.send_message(chat_id=update.message.chat.id,text=msg)
     
-
-    except ValueError:
-        bot.send_message(chat_id=update.message.chat.id,text="Horário Inválido. Ex: /ida 7 ou /ida 7:30")
+    else:        
+        try:           
+            carona = valida_horario(args[0])
+            carona.update({"username": "@" + update.message.chat.username, 
+                           "chat_id": update.message.chat.id, "tipo": 1,"ativo": 1})
+    
+            try:
+                insere_bd(carona)
+                msg = "Carona de ida para as " + carona["resp"] + " oferecida por @" + update.message.chat.username 
+                bot.send_message(chat_id=update.message.from_user.id,text=msg)
+            except:
+                msg = "Ocorreu um erro ao adicionar a carona. Tente novamente." 
+                bot.send_message(chat_id=update.message.chat.id,text=msg)
+        
+    
+        except ValueError:
+            bot.send_message(chat_id=update.message.chat.id,text="Horário Inválido. Ex: /ida 7 ou /ida 7:30")
 
 
 ida_handler = CommandHandler("ida", ida, pass_args=True)
@@ -93,22 +114,33 @@ dispatcher.add_handler(ida_handler)
 
 
 def volta(bot, update, args):
-    try:
-        
-        carona = valida_horario(args[0])
-        carona.update({"username": "@" + update.message.chat.username, 
-                               "tipo": 2,"ativo": 1})
+    
+    if len(args)==0:
+        tipo = 2
         try:
-            insere_bd(carona)
-            msg = "Carona de volta para as " + carona["resp"] + " oferecida por @" + update.message.chat.username 
-            bot.send_message(chat_id=update.message.from_user.id,text=msg)
+            lista= "**Caronas de Volta:**\n\n"
+            lista+= busca_bd(tipo, update.message.chat.id)
+            bot.send_message(chat_id=update.message.chat.id,text=lista)
         except:
-            msg = "Ocorreu um erro ao adicionar a carona. Tente novamente." 
+            msg = "Ocorreu um erro ao buscar a lista. Tente novamente." 
             bot.send_message(chat_id=update.message.chat.id,text=msg)
     
-
-    except ValueError:
-        bot.send_message(chat_id=update.message.chat.id,text="Horário Inválido.")
+    else: 
+        try:   
+            carona = valida_horario(args[0])
+            carona.update({"username": "@" + update.message.chat.username, 
+                           "chat_id": update.message.chat.id, "tipo": 2,"ativo": 1})
+            try:
+                insere_bd(carona)
+                msg = "Carona de volta para as " + carona["resp"] + " oferecida por @" + update.message.chat.username 
+                bot.send_message(chat_id=update.message.from_user.id,text=msg)
+            except:
+                msg = "Ocorreu um erro ao adicionar a carona. Tente novamente." 
+                bot.send_message(chat_id=update.message.chat.id,text=msg)
+        
+    
+        except ValueError:
+            bot.send_message(chat_id=update.message.chat.id,text="Horário Inválido.")
 
 
 volta_handler = CommandHandler("volta", volta, pass_args=True)
