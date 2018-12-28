@@ -9,13 +9,19 @@ import logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                      level=logging.INFO)
 
-
+#Funçao para inserir uma nova carona no banco de dados
 def insere_bd(carona):
     client = MongoClient()
     caronas_col = client.fregolae.caronas
+    
+    conditions = {"ativo":1,"tipo":carona["tipo"], "chat_id":carona["chat_id"], 
+                  "username":carona["username"]}
+    if caronas_col.count_documents(conditions) > 0:
+        caronas_col.update_many(conditions,{"$set":{"ativo":0}})
     caronas_col.insert_one(carona)
     client.close()
 
+#Funçao para recuperar a lista de caronas ativas
 def busca_bd(tipo, chat_id):
     client = MongoClient()
     caronas_col = client.fregolae.caronas
@@ -26,7 +32,8 @@ def busca_bd(tipo, chat_id):
     for carona in res:
         msg += carona["resp"] + " - " + carona["username"]+"\n"
     return msg
-    
+  
+#Funçao que verifica se o horário passado é válido
 def valida_horario(arg):
     l = len(arg)
     if l<6:
