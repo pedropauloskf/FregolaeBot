@@ -37,7 +37,7 @@ def busca_bd(tipo, chat_id):
             margem = datetime(time.year,time.month,time.day,time.hour,time.minute+20)
     except ValueError:
         margem = datetime(time.year,time.month,time.day,time.hour+1,time.minute-40)
-    conditions = {{"ativo":1, "chat_id":chat_id, "horario":{"$lt":margem}}}
+    conditions = {"ativo":1, "chat_id":chat_id, "horario":{"$lt":margem}}
     if caronas_col.count_documents(conditions) > 0:
         caronas_col.update_many(conditions,{"$set":{"ativo":0}})
     
@@ -204,10 +204,38 @@ def remover(bot, update, args):
 #            bot.send_message(chat_id=update.message.from_user.id, text=msg)
         else:
             raise ValueError
+    except ValueError:
+        msg = "Entrada inváida. Ex: /remover volta ou /remover ida" 
+        bot.send_message(chat_id=update.message.chat.id, text=msg)       
     except:
         msg = "Ocorreu um erro ao remover a carona. Tente novamente." 
         bot.send_message(chat_id=update.message.chat.id, text=msg)
+
+
+remover_handler = CommandHandler("remover", remover, pass_args=True)
+dispatcher.add_handler(remover_handler) 
+
+
+
+def caronas(bot, update):
+    try:
+        lista =  ""
+        lista += "*Caronas de Ida:*\n"
+        lista += busca_bd(1, update.message.chat.id)
         
+        lista += "\n*Caronas de Volta:*\n"
+        lista += busca_bd(2, update.message.chat.id)
+        
+        bot.send_message(chat_id=update.message.chat.id, text=lista, 
+                         parse_mode=telegram.ParseMode.MARKDOWN)
+    except:
+        msg = "Ocorreu um erro ao buscar a lista. Tente novamente." 
+        bot.send_message(chat_id=update.message.chat.id,text=msg)
+
+caronas_handler = CommandHandler("caronas", caronas)
+dispatcher.add_handler(caronas_handler) 
+
+ 
 updater.start_polling()
 
 
