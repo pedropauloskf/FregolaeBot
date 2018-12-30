@@ -27,6 +27,21 @@ def insere_bd(carona):
 def busca_bd(tipo, chat_id):
     client = MongoClient()
     caronas_col = client.fregolae.caronas
+    
+    #Verifica se tem caronas para antes do horário atual ainda ativas e remove-as
+    time = datetime.now()
+    try:
+        if time.hour == 23:
+            margem = datetime(time.year,time.month,time.day+1,0,0)
+        else:
+            margem = datetime(time.year,time.month,time.day,time.hour,time.minute+20)
+    except ValueError:
+        margem = datetime(time.year,time.month,time.day,time.hour+1,time.minute-40)
+    conditions = {{"ativo":1, "chat_id":chat_id, "horario":{"$lt":margem}}}
+    if caronas_col.count_documents(conditions) > 0:
+        caronas_col.update_many(conditions,{"$set":{"ativo":0}})
+    
+    
     res = caronas_col.find({"ativo":1,"tipo":tipo, "chat_id":chat_id}).sort("horario",pymongo.ASCENDING)
     client.close()
     
@@ -36,7 +51,7 @@ def busca_bd(tipo, chat_id):
         if carona["horario"].day != dia:
             dia = carona["horario"].day
             mes = carona["horario"].month
-            msg = "\n*" + str(dia) + "/" + str(mes) + "*\n"
+            msg += "\n*" + str(dia) + "/" + str(mes) + "*\n"
         msg += carona["horario"].time().strftime("%X")[:5] + " - " + carona["username"]+"\n"
     return msg
   
@@ -82,7 +97,7 @@ def valida_horario(arg):
     return dados
 
 
-key = input("TOKEN: ") 
+key = input("TOKEN: ")
 
 bot = telegram.Bot(token=key)
 updater = Updater(token=key)
