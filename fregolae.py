@@ -6,7 +6,6 @@ import pymongo
 from pymongo import MongoClient
 from datetime import datetime
 
-
 import logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                      level=logging.INFO)
@@ -22,6 +21,7 @@ def insere_bd(carona):
         caronas_col.update_many(conditions,{"$set":{"ativo":0}})
     caronas_col.insert_one(carona)
     client.close()
+
 
 #Funçao para recuperar a lista de caronas ativas
 def busca_bd(tipo, chat_id):
@@ -54,7 +54,8 @@ def busca_bd(tipo, chat_id):
             msg += "\n*" + str(dia) + "/" + str(mes) + "*\n"
         msg += carona["horario"].time().strftime("%X")[:5] + " - " + carona["username"]+"\n"
     return msg
-  
+
+
 #Funçao para desativar caronas
 def desativar_bd(tipo, username, chat_id):
     client = MongoClient()
@@ -98,7 +99,6 @@ def valida_horario(arg):
 
 
 key = input("TOKEN: ")
-
 bot = telegram.Bot(token=key)
 updater = Updater(token=key)
 dispatcher = updater.dispatcher
@@ -113,6 +113,7 @@ dispatcher.add_handler(start_handler)
 
 
 def ida(bot, update, args):
+
     
     if len(args)==0:
         tipo = 1
@@ -133,8 +134,8 @@ def ida(bot, update, args):
     
             try:
                 insere_bd(carona)
-                msg = ("Carona de ida para as " + carona["horario"].time().strftime("%X")[:5] 
-                        + " oferecida por " + carona["username"])
+                msg = ("Carona de ida para às " + carona["horario"].time().strftime("%X")[:5] 
+                        + " oferecida por " + carona["username"] + ".")
                 bot.send_message(chat_id=update.message.chat.id, text=msg)
 #                bot.send_message(chat_id=update.message.from_user.id, text=msg)
             except:
@@ -144,11 +145,12 @@ def ida(bot, update, args):
     
         except ValueError:
             bot.send_message(chat_id=update.message.chat.id, text="Horário Inválido.")
-
+        except TypeError:
+            msg = "Crie um username nas configurações para poder utilizar o Bot"
+            bot.send_message(chat_id=update.message.chat.id, text=msg)   
 
 ida_handler = CommandHandler("ida", ida, pass_args=True)
 dispatcher.add_handler(ida_handler)
-
 
 
 def volta(bot, update, args):
@@ -171,18 +173,19 @@ def volta(bot, update, args):
                            "chat_id": update.message.chat.id, "tipo": 2,"ativo": 1})
             try:
                 insere_bd(carona)
-                msg = ("Carona de volta para as " + carona["horario"].time().strftime("%X")[:5] 
-                        + " oferecida por " + carona["username"])
+                msg = ("Carona de volta para às " + carona["horario"].time().strftime("%X")[:5] 
+                        + " oferecida por " + carona["username"] + ".")
                 bot.send_message(chat_id=update.message.chat.id, text=msg)
 #                bot.send_message(chat_id=update.message.from_user.id, text=msg)
             except:
                 msg = "Ocorreu um erro ao adicionar a carona. Tente novamente." 
                 bot.send_message(chat_id=update.message.chat.id, text=msg)
         
-    
+        except TypeError:
+            msg = "Crie um username nas configurações para poder utilizar o Bot"
+            bot.send_message(chat_id=update.message.chat.id, text=msg)   
         except ValueError:
             bot.send_message(chat_id=update.message.chat.id, text="Horário Inválido.")
-
 
 volta_handler = CommandHandler("volta", volta, pass_args=True)
 dispatcher.add_handler(volta_handler)
@@ -190,7 +193,7 @@ dispatcher.add_handler(volta_handler)
 
 def remover(bot, update, args):
     try:
-        if len(args) > 1:
+        if len(args) != 1:
             raise ValueError
         elif args[0] == "ida":
             desativar_bd(1,update.message.chat.id,update.message.from_user.username)
@@ -206,19 +209,23 @@ def remover(bot, update, args):
             raise ValueError
     except ValueError:
         msg = "Entrada inváida. Ex: /remover volta ou /remover ida" 
-        bot.send_message(chat_id=update.message.chat.id, text=msg)       
+        bot.send_message(chat_id=update.message.chat.id, text=msg)
+    except TypeError:
+        msg = "Crie um username nas configurações para poder utilizar o Bot"
+        bot.send_message(chat_id=update.message.chat.id, text=msg)     
     except:
         msg = "Ocorreu um erro ao remover a carona. Tente novamente." 
         bot.send_message(chat_id=update.message.chat.id, text=msg)
-
 
 remover_handler = CommandHandler("remover", remover, pass_args=True)
 dispatcher.add_handler(remover_handler) 
 
 
-
 def caronas(bot, update):
     try:
+        if update.message.from_user.username == None:
+            raise TypeError
+        
         lista =  ""
         lista += "*Caronas de Ida:*\n"
         lista += busca_bd(1, update.message.chat.id)
@@ -228,6 +235,9 @@ def caronas(bot, update):
         
         bot.send_message(chat_id=update.message.chat.id, text=lista, 
                          parse_mode=telegram.ParseMode.MARKDOWN)
+    except TypeError:
+        msg = "Crie um username nas configurações para poder utilizar o Bot"
+        bot.send_message(chat_id=update.message.chat.id, text=msg)   
     except:
         msg = "Ocorreu um erro ao buscar a lista. Tente novamente." 
         bot.send_message(chat_id=update.message.chat.id,text=msg)
@@ -235,7 +245,26 @@ def caronas(bot, update):
 caronas_handler = CommandHandler("caronas", caronas)
 dispatcher.add_handler(caronas_handler) 
 
- 
+
+def help(bot, update):
+    msg = ("Bot para simplificar a organização do grupo de caronas :D\n\n" +
+           "Estes são os comandos:\n" +
+           "1) /caronas: Lista todas as caronas ativas no momento, separadas por dia, ida e volta\n\n" +
+           "2) /ida [horario]: Adiciona uma carona de ida para o fundão chegando lá no horário informado. Ex: /ida 12:30\n" + 
+           "Se não for informado um horário, enviará a lista das caronas de ida\n\n"
+           "3) /volta [horario]: Adiciona uma carona de volta do fundão saindo de lá no horário informado. Ex: /volta 12:30\n" + 
+           "Se não for informado um horário, enviará a lista das caronas de volta\n\n" + 
+           "4) /remover [ida/volta]: Remove da lista a sua carona, conforme selecionado.\n\n" +
+           "OBSs:\n"+
+           "   ->Para utilizar o bot, você precisa de um username. Caso não tenha, só ir em configurações e criar um. É bem rapidinho.\n" +
+           "   ->As caronas são removidas da lista 20 minutos após passar o horário estipulado para a chegada/saída\n")
+    
+    bot.send_message(chat_id=update.message.chat.id,text=msg)
+
+help_handler = CommandHandler("help", help)
+dispatcher.add_handler(help_handler) 
+
+
 updater.start_polling()
 
 
