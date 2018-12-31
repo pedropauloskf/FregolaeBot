@@ -248,7 +248,7 @@ dispatcher.add_handler(caronas_handler)
 
 def help(bot, update):
     msg = ("Bot para simplificar a organização do grupo de caronas :D\n\n" +
-           "Estes são os comandos:\n" +
+           "Comandos do bot:\n" +
            "1) /caronas: Lista todas as caronas ativas no momento, separadas por dia, ida e volta\n\n" +
            "2) /ida [horario]: Adiciona uma carona de ida para o fundão chegando lá no horário informado. Ex: /ida 12:30\n" + 
            "Se não for informado um horário, enviará a lista das caronas de ida\n\n"
