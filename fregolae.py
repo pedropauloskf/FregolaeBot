@@ -1,10 +1,10 @@
 import telegram
 from telegram.ext import Updater
 from telegram.ext import CommandHandler
-from telegram.ext import MessageHandler, Filters
 import pymongo
 from pymongo import MongoClient
 from datetime import datetime
+import os
 
 import logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -98,7 +98,7 @@ def valida_horario(arg):
     return dados
 
 
-key = input("TOKEN: ")
+key = os.environ.get('FREGOLAE_TOKEN')
 bot = telegram.Bot(token=key)
 updater = Updater(token=key)
 dispatcher = updater.dispatcher
