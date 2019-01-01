@@ -1,1 +1,1 @@
-web: python fregolae.py
+worker: python fregolae.py
