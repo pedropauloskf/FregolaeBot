@@ -12,7 +12,7 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
 
 #Funçao para inserir uma nova carona no banco de dados
 def insere_bd(carona):
-    client = MongoClient()
+    client = MongoClient(MONGO)
     caronas_col = client.fregolae.caronas
     
     conditions = {"ativo":1,"tipo":carona["tipo"], "chat_id":carona["chat_id"], 
@@ -25,7 +25,7 @@ def insere_bd(carona):
 
 #Funçao para recuperar a lista de caronas ativas
 def busca_bd(tipo, chat_id):
-    client = MongoClient()
+    client = MongoClient(MONGO)
     caronas_col = client.fregolae.caronas
     
     #Verifica se tem caronas para antes do horário atual ainda ativas e remove-as
@@ -40,8 +40,7 @@ def busca_bd(tipo, chat_id):
     conditions = {"ativo":1, "chat_id":chat_id, "horario":{"$lt":margem}}
     if caronas_col.count_documents(conditions) > 0:
         caronas_col.update_many(conditions,{"$set":{"ativo":0}})
-    
-    
+     
     res = caronas_col.find({"ativo":1,"tipo":tipo, "chat_id":chat_id}).sort("horario",pymongo.ASCENDING)
     client.close()
     
@@ -52,18 +51,19 @@ def busca_bd(tipo, chat_id):
             dia = carona["horario"].day
             mes = carona["horario"].month
             msg += "\n*" + str(dia) + "/" + str(mes) + "*\n"
-        msg += carona["horario"].time().strftime("%X")[:5] + " - " + carona["username"]+"\n"
+        msg += carona["horario"].time().strftime("%X")[:5] + " - @" + carona["username"]+"\n"
     return msg
 
 
 #Funçao para desativar caronas
 def desativar_bd(tipo, username, chat_id):
-    client = MongoClient()
+    client = MongoClient(MONGO)
     caronas_col = client.fregolae.caronas
     conditions = {"ativo":1,"tipo":tipo, "username":username, "chat_id":chat_id}
     if caronas_col.count_documents(conditions) > 0:
         caronas_col.update_many(conditions,{"$set":{"ativo":0}})
-        
+    client.close() 
+
 
 #Funçao que verifica se o horário passado é válido
 def valida_horario(arg):
@@ -90,17 +90,16 @@ def valida_horario(arg):
                 horario = datetime(time.year,time.month,time.day+1,hora,minuto)
             except ValueError:
                 horario = datetime(time.year,time.month+1,1,hora,minuto)
-
     else:
         raise ValueError
-        
     dados = {"horario":horario}
     return dados
 
 
-key = os.environ.get('FREGOLAE_TOKEN')
-bot = telegram.Bot(token=key)
-updater = Updater(token=key)
+MONGO = os.environ.get("FREGOLAE_MLAB")
+TOKEN = os.environ.get('FREGOLAE_TOKEN')
+bot = telegram.Bot(token=TOKEN)
+updater = Updater(token=TOKEN)
 dispatcher = updater.dispatcher
 
 
@@ -114,7 +113,6 @@ dispatcher.add_handler(start_handler)
 
 def ida(bot, update, args):
 
-    
     if len(args)==0:
         tipo = 1
         try:
@@ -129,13 +127,13 @@ def ida(bot, update, args):
     else:        
         try:           
             carona = valida_horario(args[0])
-            carona.update({"username": "@" + update.message.from_user.username, 
+            carona.update({"username": update.message.from_user.username, 
                            "chat_id": update.message.chat.id, "tipo": 1,"ativo": 1})
     
             try:
                 insere_bd(carona)
                 msg = ("Carona de ida para às " + carona["horario"].time().strftime("%X")[:5] 
-                        + " oferecida por " + carona["username"] + ".")
+                        + " oferecida por @" + carona["username"] + ".")
                 bot.send_message(chat_id=update.message.chat.id, text=msg)
 #                bot.send_message(chat_id=update.message.from_user.id, text=msg)
             except:
@@ -169,12 +167,12 @@ def volta(bot, update, args):
     else: 
         try:   
             carona = valida_horario(args[0])
-            carona.update({"username": "@" + update.message.from_user.username, 
+            carona.update({"username": update.message.from_user.username, 
                            "chat_id": update.message.chat.id, "tipo": 2,"ativo": 1})
             try:
                 insere_bd(carona)
                 msg = ("Carona de volta para às " + carona["horario"].time().strftime("%X")[:5] 
-                        + " oferecida por " + carona["username"] + ".")
+                        + " oferecida por @" + carona["username"] + ".")
                 bot.send_message(chat_id=update.message.chat.id, text=msg)
 #                bot.send_message(chat_id=update.message.from_user.id, text=msg)
             except:
