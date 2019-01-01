@@ -56,7 +56,7 @@ def busca_bd(tipo, chat_id):
 
 
 #Funçao para desativar caronas
-def desativar_bd(tipo, username, chat_id):
+def desativar_bd(tipo, chat_id, username):
     client = MongoClient(MONGO)
     caronas_col = client.fregolae.caronas
     conditions = {"ativo":1,"tipo":tipo, "username":username, "chat_id":chat_id}
