@@ -29,14 +29,12 @@ def busca_bd(tipo, chat_id):
     caronas_col = client.fregolae.caronas
     
     #Verifica se tem caronas para antes do horário atual ainda ativas e remove-as
-    time = datetime.now().astimezone(FUSO)
+    time = datetime.now(FUSO)
     try:
-        if time.hour == 23:
-            margem = datetime(time.year,time.month,time.day+1,0,0,tzinfo=FUSO)
-        else:
-            margem = datetime(time.year,time.month,time.day,time.hour,time.minute+20,tzinfo=FUSO)
+        margem = datetime(time.year,time.month,time.day,time.hour,time.minute-20)
     except ValueError:
-        margem = datetime(time.year,time.month,time.day,time.hour+1,time.minute-40,tzinfo=FUSO)
+        margem = datetime(time.year,time.month,time.day,time.hour-1,time.minute+40)
+        
     conditions = {"ativo":1, "chat_id":chat_id, "horario":{"$lt":margem}}
     if caronas_col.count_documents(conditions) > 0:
         caronas_col.update_many(conditions,{"$set":{"ativo":0}})
@@ -76,29 +74,31 @@ def valida_horario(arg):
         entrada = arg.split(":")
         
         #Cria objeto datetime para armazenamento no MongoDB
-        time = datetime.now().astimezone(FUSO)
+        time = datetime.now(FUSO)
         hora = int(entrada[0])        
         if len(entrada)==2:
             minuto = int(entrada[1])
         else:
             minuto = 0
         #objeto Datetime para armazenar carona    
-        horario = datetime(time.year,time.month,time.day,hora,minuto, tzinfo=FUSO)
+        horario = datetime(time.year,time.month,time.day,hora,minuto,tzinfo=FUSO)
         #Verifica se a carona é para o próprio dia ou para o dia seguinte
         if time>horario:
             try:
-                horario = datetime(time.year,time.month,time.day+1,hora,minuto,tzinfo=FUSO)
+                horario = datetime(time.year,time.month,time.day+1,hora,minuto)
             except ValueError:
-                horario = datetime(time.year,time.month+1,1,hora,minuto,tzinfo=FUSO)
+                horario = datetime(time.year,time.month+1,1,hora,minuto)
     else:
         raise ValueError
-    dados = {"horario":horario}
+        
+    dados = {"horario":horario.replace(tzinfo=None)}
     return dados
 
-FUSO  = timezone("America/Sao_Paulo")
+#Variáveis globais
+FUSO  = timezone("America/Sao_Paulo") 
 MONGO = os.environ.get("FREGOLAE_MLAB")
 TOKEN = os.environ.get('FREGOLAE_TOKEN')
-bot   = telegram.Bot(token=TOKEN)
+bot = telegram.Bot(token=TOKEN)
 updater = Updater(token=TOKEN)
 dispatcher = updater.dispatcher
 
