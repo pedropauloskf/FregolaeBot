@@ -81,7 +81,7 @@ def valida_horario(arg):
         else:
             minuto = 0
         #objeto Datetime para armazenar carona    
-        horario = datetime(time.year,time.month,time.day,hora,minuto,tzinfo=FUSO)
+        horario = datetime(time.year,time.month,time.day,hora,minuto,tzinfo=time.tzinfo)
         #Verifica se a carona é para o próprio dia ou para o dia seguinte
         if time>horario:
             try:
