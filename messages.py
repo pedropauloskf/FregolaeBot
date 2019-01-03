@@ -15,7 +15,7 @@ MSGS = {
         "Bot para simplificar a organização do grupo de " +
         "caronas :D\n\n Comandos do bot:\n",
     "help_footer":
-        "OBSs:\n" +
+        "OBS:\n" +
         "   ->Para utilizar o bot, você precisa de um username. " +
         "Caso não tenha, só ir em configurações e criar um. " +
         "É bem rapidinho.\n" +
