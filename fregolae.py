@@ -10,92 +10,93 @@ import logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                      level=logging.INFO)
 
-#Funçao para inserir uma nova carona no banco de dados
-def insere_bd(carona):
+#Function to insert a new ride on the database
+def insert_db(ride):
     client = MongoClient(MONGO)
-    caronas_col = client.fregolae.caronas
+    rides_col = client.fregolae.rides
     
-    conditions = {"ativo":1,"tipo":carona["tipo"], "chat_id":carona["chat_id"], 
-                  "username":carona["username"]}
-    if caronas_col.count_documents(conditions) > 0:
-        caronas_col.update_many(conditions,{"$set":{"ativo":0}})
-    caronas_col.insert_one(carona)
+    conditions = {"status":1,"type":ride["type"], "chat_id":ride["chat_id"], 
+                  "username":ride["username"]}
+    if rides_col.count_documents(conditions) > 0:
+        rides_col.update_many(conditions,{"$set":{"status":0}})
+    rides_col.insert_one(ride)
     client.close()
 
 
-#Funçao para recuperar a lista de caronas ativas
-def busca_bd(tipo, chat_id):
+#Function to retrieve active rides list
+def search_db(type, chat_id):
     client = MongoClient(MONGO)
-    caronas_col = client.fregolae.caronas
+    rides_col = client.fregolae.rides
     
-    #Verifica se tem caronas para antes do horário atual ainda ativas e remove-as
-    time = datetime.now(FUSO)
+    #Verify if there are rides past the safety margin and removes them
+    now = datetime.now(TZ)
     try:
-        margem = datetime(time.year,time.month,time.day,time.hour,time.minute-20)
+        safety_margin = datetime(now.year,now.month,now.day,now.hour,now.minute-20)
     except ValueError:
-        margem = datetime(time.year,time.month,time.day,time.hour-1,time.minute+40)
+        safety_margin = datetime(now.year,now.month,now.day,now.hour-1,now.minute+40)
         
-    conditions = {"ativo":1, "chat_id":chat_id, "horario":{"$lt":margem}}
-    if caronas_col.count_documents(conditions) > 0:
-        caronas_col.update_many(conditions,{"$set":{"ativo":0}})
+    conditions = {"status":1, "chat_id":chat_id, "ride_time":{"$lt":safety_margin}}
+    if rides_col.count_documents(conditions) > 0:
+        rides_col.update_many(conditions,{"$set":{"status":0}})
      
-    res = caronas_col.find({"ativo":1,"tipo":tipo, "chat_id":chat_id}).sort("horario",pymongo.ASCENDING)
+    res = rides_col.find({"status":1,"type":type, "chat_id":chat_id}).sort("ride_time",pymongo.ASCENDING)
     client.close()
     
     msg = ""
-    dia = 0
-    for carona in res:
-        if carona["horario"].day != dia:
-            dia = carona["horario"].day
-            mes = carona["horario"].month
-            msg += "\n*" + str(dia) + "/" + str(mes) + "*\n"
-        msg += carona["horario"].time().strftime("%X")[:5] + " - @" + carona["username"]+"\n"
+    day = 0
+    for ride in res:
+        if ride["ride_time"].day != day:
+            day = ride["ride_time"].day
+            month = ride["ride_time"].month
+            msg += "\n*" + str(day) + "/" + str(month) + "*\n"
+        msg += ride["ride_time"].strftime("%X")[:5] + " - @" + ride["username"]+"\n"
     return msg
 
 
-#Funçao para desativar caronas
-def desativar_bd(tipo, chat_id, username):
+#Function to remove rides from the list
+def remove_db(type, chat_id, username):
     client = MongoClient(MONGO)
-    caronas_col = client.fregolae.caronas
-    conditions = {"ativo":1,"tipo":tipo, "username":username, "chat_id":chat_id}
-    if caronas_col.count_documents(conditions) > 0:
-        caronas_col.update_many(conditions,{"$set":{"ativo":0}})
+    rides_col = client.fregolae.rides
+    conditions = {"status":1,"type":type, "username":username, "chat_id":chat_id}
+    if rides_col.count_documents(conditions) > 0:
+        rides_col.update_many(conditions,{"$set":{"status":0}})
     client.close() 
 
 
-#Funçao que verifica se o horário passado é válido
-def valida_horario(arg):
-    #Verifica se esta dentro do tamanho correto e se não há letras
+#Function to validate the ride time passed by the user
+def validator_ride_time(arg):
+    #Verify the input length and if there are letters
     l = len(arg)
     if l<6:
         for ch in arg:
             if ch.isalpha():
                 raise ValueError
-        entrada = arg.split(":")
+        argument = arg.split(":")
         
-        #Cria objeto datetime para armazenamento no MongoDB
-        time = datetime.now(FUSO)
-        hora = int(entrada[0])        
-        if len(entrada)==2:
-            minuto = int(entrada[1])
+        #Creates the Datetime Object to be stores on the MongoDB database
+        now = datetime.now(TZ)
+        hour = int(argument[0])        
+        if len(argument)==2:
+            minute = int(argument[1])
         else:
-            minuto = 0
-        #objeto Datetime para armazenar carona    
-        horario = datetime(time.year,time.month,time.day,hora,minuto,tzinfo=time.tzinfo)
-        #Verifica se a carona é para o próprio dia ou para o dia seguinte
-        if time>horario:
+            minute = 0
+          
+        ride_time = datetime(now.year,now.month,now.day,hour,minute,tzinfo=now.tzinfo)
+        
+        #Determines if the ride is for the same day or the next day
+        if now>ride_time:
             try:
-                horario = datetime(time.year,time.month,time.day+1,hora,minuto)
+                ride_time = datetime(now.year,now.month,now.day+1,hour,minute)
             except ValueError:
-                horario = datetime(time.year,time.month+1,1,hora,minuto)
+                ride_time = datetime(now.year,now.month+1,1,hour,minute)
     else:
         raise ValueError
         
-    dados = {"horario":horario.replace(tzinfo=None)}
+    dados = {"ride_time":ride_time.replace(tzinfo=None)}
     return dados
 
-#Variáveis globais
-FUSO  = timezone("America/Sao_Paulo") 
+#Global variables
+TZ  = timezone("America/Sao_Paulo") 
 MONGO = os.environ.get("FREGOLAE_MLAB")
 TOKEN = os.environ.get('FREGOLAE_TOKEN')
 bot = telegram.Bot(token=TOKEN)
@@ -112,28 +113,29 @@ dispatcher.add_handler(start_handler)
 
 
 def ida(bot, update, args):
-
+    #If there are no arguments, returns list of rides
     if len(args)==0:
-        tipo = 1
+        type = 1
         try:
             lista= "*Caronas de Ida:*\n"
-            lista+= busca_bd(tipo, update.message.chat.id)
+            lista+= search_db(type, update.message.chat.id)
             bot.send_message(chat_id=update.message.chat.id, text=lista, 
                              parse_mode=telegram.ParseMode.MARKDOWN)
         except:
             msg = "Ocorreu um erro ao buscar a lista. Tente novamente." 
             bot.send_message(chat_id=update.message.chat.id, text=msg)
-    
+            
+    #Else validates time for the ride and adds it to the list
     else:        
         try:           
-            carona = valida_horario(args[0])
-            carona.update({"username": update.message.from_user.username, 
-                           "chat_id": update.message.chat.id, "tipo": 1,"ativo": 1})
+            ride = validator_ride_time(args[0])
+            ride.update({"username": update.message.from_user.username, 
+                           "chat_id": update.message.chat.id, "type": 1,"status": 1})
     
             try:
-                insere_bd(carona)
-                msg = ("Carona de ida para às " + carona["horario"].time().strftime("%X")[:5] 
-                        + " oferecida por @" + carona["username"] + ".")
+                insert_db(ride)
+                msg = ("Carona de ida para às " + ride["ride_time"].strftime("%X")[:5] 
+                        + " oferecida por @" + ride["username"] + ".")
                 bot.send_message(chat_id=update.message.chat.id, text=msg)
 #                bot.send_message(chat_id=update.message.from_user.id, text=msg)
             except:
@@ -152,27 +154,28 @@ dispatcher.add_handler(ida_handler)
 
 
 def volta(bot, update, args):
-    
+    #If there are no arguments, returns list of rides
     if len(args)==0:
-        tipo = 2
+        type = 2
         try:
             lista= "*Caronas de Volta:*\n"
-            lista+= busca_bd(tipo, update.message.chat.id)
+            lista+= search_db(type, update.message.chat.id)
             bot.send_message(chat_id=update.message.chat.id, text=lista, 
                              parse_mode=telegram.ParseMode.MARKDOWN)
         except:
             msg = "Ocorreu um erro ao buscar a lista. Tente novamente." 
             bot.send_message(chat_id=update.message.chat.id,text=msg)
     
+    #Else validates time for the ride and adds it to the list
     else: 
         try:   
-            carona = valida_horario(args[0])
-            carona.update({"username": update.message.from_user.username, 
-                           "chat_id": update.message.chat.id, "tipo": 2,"ativo": 1})
+            ride = validator_ride_time(args[0])
+            ride.update({"username": update.message.from_user.username, 
+                           "chat_id": update.message.chat.id, "type": 2,"status": 1})
             try:
-                insere_bd(carona)
-                msg = ("Carona de volta para às " + carona["horario"].time().strftime("%X")[:5] 
-                        + " oferecida por @" + carona["username"] + ".")
+                insert_db(ride)
+                msg = ("Carona de volta para às " + ride["ride_time"].strftime("%X")[:5] 
+                        + " oferecida por @" + ride["username"] + ".")
                 bot.send_message(chat_id=update.message.chat.id, text=msg)
 #                bot.send_message(chat_id=update.message.from_user.id, text=msg)
             except:
@@ -189,17 +192,18 @@ volta_handler = CommandHandler("volta", volta, pass_args=True)
 dispatcher.add_handler(volta_handler)
 
 
-def remover(bot, update, args):
+def remove(bot, update, args):
     try:
+        #Verifies the argument and removes de rida accordingly
         if len(args) != 1:
             raise ValueError
         elif args[0] == "ida":
-            desativar_bd(1,update.message.chat.id,update.message.from_user.username)
+            remove_db(1,update.message.chat.id,update.message.from_user.username)
             msg = "Carona de ida removida."
             bot.send_message(chat_id=update.message.chat.id, text=msg)
 #            bot.send_message(chat_id=update.message.from_user.id, text=msg)
         elif args[0] == "volta":
-            desativar_bd(2,update.message.chat.id,update.message.from_user.username)
+            remove_db(2,update.message.chat.id,update.message.from_user.username)
             msg = "Carona de volta removida."
             bot.send_message(chat_id=update.message.chat.id, text=msg)
 #            bot.send_message(chat_id=update.message.from_user.id, text=msg)
@@ -215,21 +219,22 @@ def remover(bot, update, args):
         msg = "Ocorreu um erro ao remover a carona. Tente novamente." 
         bot.send_message(chat_id=update.message.chat.id, text=msg)
 
-remover_handler = CommandHandler("remover", remover, pass_args=True)
-dispatcher.add_handler(remover_handler) 
+remove_handler = CommandHandler("remover", remove, pass_args=True)
+dispatcher.add_handler(remove_handler) 
 
 
-def caronas(bot, update):
+def rides(bot, update):
+    #Returns a list with all the rides currently active
     try:
         if update.message.from_user.username == None:
             raise TypeError
         
         lista =  ""
         lista += "*Caronas de Ida:*\n"
-        lista += busca_bd(1, update.message.chat.id)
+        lista += search_db(1, update.message.chat.id)
         
         lista += "\n*Caronas de Volta:*\n"
-        lista += busca_bd(2, update.message.chat.id)
+        lista += search_db(2, update.message.chat.id)
         
         bot.send_message(chat_id=update.message.chat.id, text=lista, 
                          parse_mode=telegram.ParseMode.MARKDOWN)
@@ -240,11 +245,12 @@ def caronas(bot, update):
         msg = "Ocorreu um erro ao buscar a lista. Tente novamente." 
         bot.send_message(chat_id=update.message.chat.id,text=msg)
 
-caronas_handler = CommandHandler("caronas", caronas)
-dispatcher.add_handler(caronas_handler) 
+rides_handler = CommandHandler("caronas", rides)
+dispatcher.add_handler(rides_handler) 
 
 
 def help(bot, update):
+    #Returns an explanation of the Bot commands for the users
     msg = ("Bot para simplificar a organização do grupo de caronas :D\n\n" +
            "Comandos do bot:\n" +
            "1) /caronas: Lista todas as caronas ativas no momento, separadas por dia, ida e volta\n\n" +
