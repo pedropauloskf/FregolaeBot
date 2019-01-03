@@ -1,10 +1,10 @@
 import unittest
 from features import Ida, Volta, Remover, Start, Caronas
 from messages import MSGS
-from db import BdClient
+from db import DbClient
 
 
-class DummyDb(BdClient):
+class DummyDb(DbClient):
     IDA = "10:00 - @usr1\n10:00 - @usr3\n10:00 - @usr2\n"
     VOLTA = "10:00 - @usr1\n10:00 - @usr3\n10:00 - @usr2\n"
 
