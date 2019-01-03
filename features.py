@@ -21,8 +21,8 @@ class Ida(BotFeature):
         "um horário, enviará a lista das caronas de ida\n\n"
 
     def processar(self, username, chat_id, args):
+        tipo = 1
         if len(args) == 0:
-            tipo = 1
             try:
                 msg = MSGS["ida_titulo"] + self.bd_cliente.busca_bd(
                     tipo, chat_id)
@@ -33,12 +33,12 @@ class Ida(BotFeature):
                 carona = valida_horario(args[0])
                 carona.update(
                     {"username": username,
-                     "chat_id": chat_id, "tipo": 1, "ativo": 1})
+                     "chat_id": chat_id, "tipo": tipo, "ativo": 1})
                 try:
                     self.bd_cliente.insere_bd(carona)
                     data_carona = carona["horario"].time().strftime("%X")[:5]
                     return f"Carona de ida para às {data_carona} " + \
-                        "oferecida por @{username}."
+                        f"oferecida por @{username}."
                 except:
                     return MSGS["add_error"]
             except ValueError:
@@ -54,8 +54,8 @@ class Volta(BotFeature):
         " caronas de volta\n\n"
 
     def processar(self, username, chat_id, args):
+        tipo = 2
         if len(args) == 0:
-            tipo = 2
             try:
                 msg = "*Caronas de Volta:*\n"
                 msg += self.bd_cliente.busca_bd(tipo, chat_id)
@@ -70,8 +70,8 @@ class Volta(BotFeature):
                 try:
                     self.bd_cliente.insere_bd(carona)
                     data_carona = carona["horario"].time().strftime("%X")[:5]
-                    return f'Carona de Volta para às " +"{data_carona} " + \
-                        "oferecida por @{username}.'
+                    return f"Carona de Volta para às {data_carona} " + \
+                        f"oferecida por @{username}."
                 except:
                     return MSGS["add_error"]
             except ValueError:
