@@ -88,7 +88,7 @@ class Remover(BotFeature):
             return MSGS["remove_err"]
         else:
             self.bd_cliente.desativar_bd(
-                1 if args[0] == "ida" else 0, chat_id, username)
+                1 if args[0] == "ida" else 2, chat_id, username)
             return str.format(MSGS["removed"], args[0])
 
 
