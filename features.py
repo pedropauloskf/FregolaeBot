@@ -24,7 +24,7 @@ class Ida(BotFeature):
         tipo = 1
         if len(args) == 0:
             try:
-                msg = MSGS["ida_titulo"] + self.bd_cliente.busca_bd(
+                return MSGS["ida_titulo"] + self.bd_cliente.busca_bd(
                     tipo, chat_id)
             except:
                 return MSGS["list_error"]
@@ -58,7 +58,7 @@ class Volta(BotFeature):
         if len(args) == 0:
             try:
                 msg = "*Caronas de Volta:*\n"
-                msg += self.bd_cliente.busca_bd(tipo, chat_id)
+                return msg + self.bd_cliente.busca_bd(tipo, chat_id)
             except:
                 return MSGS["list_error"]
         else:

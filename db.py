@@ -1,12 +1,13 @@
 from abc import ABC, abstractmethod
 import pymongo
 from pymongo import MongoClient
+from datetime import datetime
 from timeutil import FUSO
 
 
 class DbClient(ABC):
     def __init__(self, client):
-        self.client = client
+        self.client = MongoClient(client)
 
     # Funçao para inserir uma nova carona no banco de dados
     @abstractmethod
@@ -35,9 +36,9 @@ class DbClient(ABC):
 
 class MongoDbClient(DbClient):
     def __init__(self, mongo_cfg):
-        super().__init__(MongoClient(mongo_cfg))
+        super().__init__(mongo_cfg)
 
-    def insere_bd(carona):
+    def insere_bd(self, carona):
         caronas_col = self.client.fregolae.caronas
         conditions = {
             "ativo": 1, "tipo": carona["tipo"], "chat_id": carona["chat_id"],
@@ -46,15 +47,19 @@ class MongoDbClient(DbClient):
             caronas_col.update_many(conditions, {"$set": {"ativo": 0}})
         caronas_col.insert_one(carona)
 
-    def busca_bd(tipo, chat_id):
+    def busca_bd(self, tipo, chat_id):
         caronas_col = self.client.fregolae.caronas
 
         # Verifica se tem caronas para antes do horário atual
         # ainda ativas e remove-as
         time = datetime.now(FUSO)
-        margem = datetime(time.year, time.month, time.day, time.hour,
-                          time.minute(-20 if time.minute > 40 else 40))
-
+        try:
+            margem = datetime(
+                time.year, time.month, time.day, time.hour, time.minute - 20)
+        except ValueError:
+            margem = datetime(
+                time.year, time.month, time.day, time.hour - 1,
+                time.minute+40)
         conditions = {"ativo": 1, "chat_id": chat_id,
                       "horario": {"$lt": margem}}
         if caronas_col.count_documents(conditions) > 0:
