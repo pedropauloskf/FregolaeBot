@@ -21,5 +21,9 @@ MSGS = {
         "É bem rapidinho.\n" +
         "   ->As caronas são removidas da lista 20 minutos após passar o " +
         "horário estipulado para a chegada/saída\n",
-    "feature_line": "{0}) /{1}{2}\n"
+    "feature_line": "{0}) /{1}{2}\n",
+    "sobre":
+        "FregolaeBot feito com ❤️ por @pedropauloskf e @almeidakayan\n\n" +
+        "Para os interessados, código fonte disponível em "+
+        "https://github.com/pedropauloskf/FregolaeBot"
 }

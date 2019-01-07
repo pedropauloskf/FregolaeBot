@@ -117,9 +117,18 @@ class Help(BotFeature):
         msg = MSGS["help_header"]
         i = 1
         for f in features:
-            if (f.NOME in ("start", "help")):
+            if (f.NOME in ("start", "help", "sobre")):
                 continue
             msg += str.format(MSGS["feature_line"], i, f.NOME, f.DESCRIPTION)
             i += 1
         msg += MSGS["help_footer"]
         return msg
+
+
+class Sobre(BotFeature):
+    NOME = "sobre"
+    
+    def processar(self, username, chat_id, features):
+        return MSGS["sobre"]
+
+

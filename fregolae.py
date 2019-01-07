@@ -1,7 +1,7 @@
 import telegram
 from telegram.ext import Updater, CommandHandler
 import os
-from features import Ida, Volta, Remover, Start, Caronas, Help
+from features import Ida, Volta, Remover, Start, Caronas, Help, Sobre
 from messages import MSGS
 # If you want to test bot without persistence
 # from tests import DummyDb
@@ -18,7 +18,7 @@ class CaronaBot():
         self.bd_cliente = bd_cliente
         self.features = [
             Caronas(self.bd_cliente), Ida(self.bd_cliente), Volta(self.bd_cliente),
-            Remover(self.bd_cliente), Start(self.bd_cliente), Help(None)]
+            Remover(self.bd_cliente), Start(self.bd_cliente), Help(None), Sobre(None)]
         self.init_features()
 
     def init_features(self):
@@ -36,7 +36,7 @@ class CaronaBot():
             name = update.message.text.replace("@"," ").split(' ')[0].replace('/', '')
             chat_id = update.message.chat.id
             try:
-                arg = args if name != Help.NOME else self.features
+                arg = args if name not in ("help","sobre") else self.features
                 res = self.feature_handler[name].processar(
                     user.username, chat_id, arg)
             except:
