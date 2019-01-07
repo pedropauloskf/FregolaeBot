@@ -42,7 +42,7 @@ class CaronaBot():
             except:
                 res = MSGS["general_error"]
         bot.send_message(
-            chat_id=update.message.chat.id, text=res,
+            chat_id=update.message.chat.id, text=res.replace("_","\\_"),
             parse_mode=telegram.ParseMode.MARKDOWN)
 
 if __name__ == '__main__':
