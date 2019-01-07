@@ -24,7 +24,7 @@ class Ida(BotFeature):
         tipo = 1
         if len(args) == 0:
             try:
-                msg = MSGS["ida_titulo"] + self.bd_cliente.busca_bd(
+                return MSGS["ida_titulo"] + self.bd_cliente.busca_bd(
                     tipo, chat_id)
             except:
                 return MSGS["list_error"]
@@ -58,7 +58,7 @@ class Volta(BotFeature):
         if len(args) == 0:
             try:
                 msg = "*Caronas de Volta:*\n"
-                msg += self.bd_cliente.busca_bd(tipo, chat_id)
+                return msg + self.bd_cliente.busca_bd(tipo, chat_id)
             except:
                 return MSGS["list_error"]
         else:
@@ -88,7 +88,7 @@ class Remover(BotFeature):
             return MSGS["remove_err"]
         else:
             self.bd_cliente.desativar_bd(
-                1 if args[0] == "ida" else 0, chat_id, username)
+                1 if args[0] == "ida" else 2, chat_id, username)
             return str.format(MSGS["removed"], args[0])
 
 

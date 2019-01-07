@@ -17,8 +17,8 @@ class CaronaBot():
     def __init__(self, bd_cliente):
         self.bd_cliente = bd_cliente
         self.features = [
-            Caronas(bd_cliente), Ida(bd_cliente), Volta(bd_cliente),
-            Remover(bd_cliente), Start(bd_cliente), Help(None)]
+            Caronas(self.bd_cliente), Ida(self.bd_cliente), Volta(self.bd_cliente),
+            Remover(self.bd_cliente), Start(self.bd_cliente), Help(None)]
         self.init_features()
 
     def init_features(self):
