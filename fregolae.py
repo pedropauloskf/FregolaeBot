@@ -33,7 +33,7 @@ class CaronaBot():
         if (user is None or user.username is None):
             res = MSGS["username_error"]
         else:
-            name = update.message.text.split(' ')[0].replace('/', '')
+            name = update.message.text.replace("@"," ").split(' ')[0].replace('/', '')
             chat_id = update.message.chat.id
             try:
                 arg = args if name != Help.NOME else self.features

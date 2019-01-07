@@ -3,7 +3,6 @@ import pymongo
 from pymongo import MongoClient
 from datetime import datetime
 from timeutil import FUSO
-from datetime import datetime
 
 
 class DbClient(ABC):
