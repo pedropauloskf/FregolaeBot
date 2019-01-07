@@ -3,6 +3,7 @@ import pymongo
 from pymongo import MongoClient
 from datetime import datetime
 from timeutil import FUSO
+from datetime import datetime
 
 
 class DbClient(ABC):
@@ -53,13 +54,10 @@ class MongoDbClient(DbClient):
         # Verifica se tem caronas para antes do horário atual
         # ainda ativas e remove-as
         time = datetime.now(FUSO)
-        try:
-            margem = datetime(
-                time.year, time.month, time.day, time.hour, time.minute - 20)
-        except ValueError:
-            margem = datetime(
-                time.year, time.month, time.day, time.hour - 1,
-                time.minute+40)
+        margem = datetime(time.year, time.month, time.day, 
+                          time.hour + (-1 if time.minute < 20 else 0),
+                          time.minute + (40 if time.minute < 20 else -20))
+
         conditions = {"ativo": 1, "chat_id": chat_id,
                       "horario": {"$lt": margem}}
         if caronas_col.count_documents(conditions) > 0:
