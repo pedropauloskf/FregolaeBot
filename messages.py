@@ -10,7 +10,7 @@ MSGS = {
     "ida_titulo": "*Caronas de Ida:*\n",
     "volta_titulo": "\n*Caronas de Volta:*\n",
     "removed": "Carona de {0} removida.",
-    "remove_err": "Entrada inváida. Ex: /remover volta ou /remover ida",
+    "remove_err": "Entrada inválida. Ex: /remover volta ou /remover ida",
     "help_header":
         "Bot para simplificar a organização do grupo de " +
         "caronas :D\n\n Comandos do bot:\n",

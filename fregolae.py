@@ -48,6 +48,7 @@ class CaronaBot():
 if __name__ == '__main__':
     MONGO = os.environ.get("FREGOLAE_MLAB")
     TOKEN = os.environ.get('FREGOLAE_TOKEN')
+ #   TOKEN = os.environ.get("TEST_TOKEN")
     bot = telegram.Bot(token=TOKEN)
     updater = Updater(token=TOKEN)
     dispatcher = updater.dispatcher
