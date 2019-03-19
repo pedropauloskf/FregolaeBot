@@ -53,7 +53,7 @@ class MongoDbClient(DbClient):
         # Verifica se tem caronas para antes do horário atual
         # ainda ativas e remove-as
         time = datetime.now(FUSO)
-        margem = datetime(time.year, time.month, time.day, 
+        margem = datetime(time.year, time.month, time.day,
                           time.hour + (-1 if time.minute < 20 else 0),
                           time.minute + (40 if time.minute < 20 else -20))
 
@@ -74,7 +74,8 @@ class MongoDbClient(DbClient):
                 mes = carona["horario"].month
                 msg += "\n*" + str(dia) + "/" + str(mes) + "*\n"
             msg += carona["horario"].time().strftime("%X")[:5] + \
-                " - @" + carona["username"]+"\n"
+                " - @" + carona["username"] + " " + \
+                carona.get("notes", "") + "\n"
         return msg
 
     def desativar_bd(self, tipo, chat_id, username):

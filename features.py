@@ -4,6 +4,9 @@ from timeutil import valida_horario
 
 
 class BotFeature(ABC):
+    NOME = ""
+    DESCRIPTION = ""
+
     def __init__(self, bd_cliente):
         self.bd_cliente = bd_cliente
 
@@ -15,10 +18,7 @@ class BotFeature(ABC):
 
 class Ida(BotFeature):
     NOME = "ida"
-    DESCRIPTION = \
-        " [horario]: Adiciona uma carona de ida para o fundão chegando " + \
-        "lá no horário informado. Ex: /ida 12:30\nSe não for informado " + \
-        "um horário, enviará a lista das caronas de ida\n\n"
+    DESCRIPTION = "ida_description"
 
     def processar(self, username, chat_id, args):
         tipo = 1
@@ -31,9 +31,11 @@ class Ida(BotFeature):
         else:
             try:
                 carona = valida_horario(args[0])
+                notes = " ".join(args[1:]) if len([args > 1]) else ""
+
                 carona.update(
                     {"username": username,
-                     "chat_id": chat_id, "tipo": tipo, "ativo": 1})
+                     "chat_id": chat_id, "tipo": tipo, "ativo": 1, "notes": notes})
                 try:
                     self.bd_cliente.insere_bd(carona)
                     data_carona = carona["horario"].time().strftime("%X")[:5]
@@ -47,26 +49,23 @@ class Ida(BotFeature):
 
 class Volta(BotFeature):
     NOME = "volta"
-    DESCRIPTION = \
-        " [horario]: Adiciona uma carona de volta para o fundão" + \
-        " saindo de lá no horário informado. Ex: /volta 12:30\nSe" + \
-        " não for informado um horário, enviará a lista das" + \
-        " caronas de volta\n\n"
+    DESCRIPTION = "volta_description"
 
     def processar(self, username, chat_id, args):
         tipo = 2
         if len(args) == 0:
             try:
-                msg = "*Caronas de Volta:*\n"
+                msg = MSGS["volta_titulo"]
                 return msg + self.bd_cliente.busca_bd(tipo, chat_id)
             except:
                 return MSGS["list_error"]
         else:
             try:
                 carona = valida_horario(args[0])
+                notes = " ".join(args[1:]) if len([args > 1]) else ""
                 carona.update(
                     {"username": username,
-                     "chat_id": chat_id, "tipo": tipo, "ativo": 1})
+                     "chat_id": chat_id, "tipo": tipo, "ativo": 1, "notes": notes})
                 try:
                     self.bd_cliente.insere_bd(carona)
                     data_carona = carona["horario"].time().strftime("%X")[:5]
@@ -80,8 +79,7 @@ class Volta(BotFeature):
 
 class Remover(BotFeature):
     NOME = "remover"
-    DESCRIPTION = " [ida/volta]: Remove da lista a sua carona, " + \
-        "conforme selecionado.\n\n"
+    DESCRIPTION = "remove_description"
 
     def processar(self, username, chat_id, args):
         if len(args) != 1 or args[0] not in ("ida", "volta"):
@@ -94,8 +92,7 @@ class Remover(BotFeature):
 
 class Caronas(BotFeature):
     NOME = "caronas"
-    DESCRIPTION = " : Lista todas as caronas ativas no momento, separadas" + \
-        " por dia, ida e volta\n\n"
+    DESCRIPTION = "caronas_description"
 
     def processar(self, username, chat_id, args):
         ida = self.bd_cliente.busca_bd(1, chat_id)
@@ -119,7 +116,8 @@ class Help(BotFeature):
         for f in features:
             if (f.NOME in ("start", "help", "sobre")):
                 continue
-            msg += str.format(MSGS["feature_line"], i, f.NOME, f.DESCRIPTION)
+            msg += str.format(MSGS["feature_line"], i,
+                              f.NOME, MSGS.get(f.DESCRIPTION, f.DESCRIPTION))
             i += 1
         msg += MSGS["help_footer"]
         return msg
@@ -127,8 +125,6 @@ class Help(BotFeature):
 
 class Sobre(BotFeature):
     NOME = "sobre"
-    
+
     def processar(self, username, chat_id, features):
         return MSGS["sobre"]
-
-
