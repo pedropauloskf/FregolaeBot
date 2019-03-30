@@ -16,66 +16,50 @@ class BotFeature(ABC):
         pass
 
 
-class Ida(BotFeature):
-    NOME = "ida"
-    DESCRIPTION = "ida_description"
+class BaseIdaVolta(BotFeature):
+    TYPE = 1
+    NOME = 'ida'
+    DESCRIPTION = f"ida_description"
 
     def processar(self, username, chat_id, args):
-        tipo = 1
         if len(args) == 0:
             try:
-                return MSGS["ida_titulo"] + self.bd_cliente.busca_bd(
-                    tipo, chat_id)
+                return MSGS[f"{self.NOME}_titulo"] + self.bd_cliente.busca_bd(
+                    self.TYPE, chat_id)
             except:
                 return MSGS["list_error"]
         else:
             try:
                 carona = valida_horario(args[0])
-                notes = " ".join(args[1:]) if len([args > 1]) else ""
+                notes = "" if len(args) == 1 else " ".join(args[1:])
 
-                carona.update(
-                    {"username": username,
-                     "chat_id": chat_id, "tipo": tipo, "ativo": 1, "notes": notes})
+                carona.update({
+                    "username": username,
+                    "chat_id": chat_id, "tipo": self.TYPE,
+                    "ativo": 1, "notes": notes
+                })
                 try:
                     self.bd_cliente.insere_bd(carona)
-                    data_carona = carona["horario"].time().strftime("%X")[:5]
-                    return f"Carona de ida para às {data_carona} " + \
-                        f"oferecida por @{username}."
+                    return self.get_message(username, carona)
                 except:
                     return MSGS["add_error"]
             except ValueError:
                 return MSGS["invalid_time_error"]
 
+    def get_message(self, username, carona):
+        data_carona = carona["horario"].time().strftime("%X")[:5]
+        prefix = "Ida" if self.TYPE == 1 else "Volta"
+        return f"Carona de {prefix} para às {data_carona} " + \
+            f"oferecida por @{username}. {carona.get('notes', '')}"
 
-class Volta(BotFeature):
-    NOME = "volta"
-    DESCRIPTION = "volta_description"
 
-    def processar(self, username, chat_id, args):
-        tipo = 2
-        if len(args) == 0:
-            try:
-                msg = MSGS["volta_titulo"]
-                return msg + self.bd_cliente.busca_bd(tipo, chat_id)
-            except:
-                return MSGS["list_error"]
-        else:
-            try:
-                carona = valida_horario(args[0])
-                notes = " ".join(args[1:]) if len([args > 1]) else ""
-                carona.update(
-                    {"username": username,
-                     "chat_id": chat_id, "tipo": tipo, "ativo": 1, "notes": notes})
-                try:
-                    self.bd_cliente.insere_bd(carona)
-                    data_carona = carona["horario"].time().strftime("%X")[:5]
-                    return f"Carona de Volta para às {data_carona} " + \
-                        f"oferecida por @{username}."
-                except:
-                    return MSGS["add_error"]
-            except ValueError:
-                return MSGS["invalid_time_error"]
+class Ida(BaseIdaVolta):
+    pass
 
+class Volta(BaseIdaVolta):
+    TYPE = 2
+    NOME = 'volta'
+    DESCRIPTION = f"volta_description"
 
 class Remover(BotFeature):
     NOME = "remover"
