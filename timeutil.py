@@ -1,6 +1,6 @@
 from datetime import datetime
 from pytz import timezone
-FUSO = timezone("America/Sao_Paulo")
+FUSO = timezone("America/Bahia")
 
 
 # Funçao que verifica se o horário passado é válido
