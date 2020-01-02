@@ -4,6 +4,9 @@ from timeutil import valida_horario
 
 
 class BotFeature(ABC):
+    NOME = ""
+    DESCRIPTION = ""
+
     def __init__(self, bd_cliente):
         self.bd_cliente = bd_cliente
 
@@ -13,75 +16,54 @@ class BotFeature(ABC):
         pass
 
 
-class Ida(BotFeature):
-    NOME = "ida"
-    DESCRIPTION = \
-        " [horario]: Adiciona uma carona de ida para o fundão chegando " + \
-        "lá no horário informado. Ex: /ida 12:30\nSe não for informado " + \
-        "um horário, enviará a lista das caronas de ida\n\n"
+class BaseIdaVolta(BotFeature):
+    TYPE = 1
+    NOME = 'ida'
+    DESCRIPTION = f"ida_description"
 
     def processar(self, username, chat_id, args):
-        tipo = 1
         if len(args) == 0:
             try:
-                return MSGS["ida_titulo"] + self.bd_cliente.busca_bd(
-                    tipo, chat_id)
+                return MSGS[f"{self.NOME}_titulo"] + self.bd_cliente.busca_bd(
+                    self.TYPE, chat_id)
             except:
                 return MSGS["list_error"]
         else:
             try:
                 carona = valida_horario(args[0])
-                carona.update(
-                    {"username": username,
-                     "chat_id": chat_id, "tipo": tipo, "ativo": 1})
+                notes = "" if len(args) == 1 else " ".join(args[1:])
+
+                carona.update({
+                    "username": username,
+                    "chat_id": chat_id, "tipo": self.TYPE,
+                    "ativo": 1, "notes": notes
+                })
                 try:
                     self.bd_cliente.insere_bd(carona)
-                    data_carona = carona["horario"].time().strftime("%X")[:5]
-                    return f"Carona de ida para às {data_carona} " + \
-                        f"oferecida por @{username}."
+                    return self.get_message(username, carona)
                 except:
                     return MSGS["add_error"]
             except ValueError:
                 return MSGS["invalid_time_error"]
 
+    def get_message(self, username, carona):
+        data_carona = carona["horario"].time().strftime("%X")[:5]
+        prefix = "Ida" if self.TYPE == 1 else "Volta"
+        return f"Carona de {prefix} para às {data_carona} " + \
+            f"oferecida por @{username}. {carona.get('notes', '')}"
 
-class Volta(BotFeature):
-    NOME = "volta"
-    DESCRIPTION = \
-        " [horario]: Adiciona uma carona de volta para o fundão" + \
-        " saindo de lá no horário informado. Ex: /volta 12:30\nSe" + \
-        " não for informado um horário, enviará a lista das" + \
-        " caronas de volta\n\n"
 
-    def processar(self, username, chat_id, args):
-        tipo = 2
-        if len(args) == 0:
-            try:
-                msg = "*Caronas de Volta:*\n"
-                return msg + self.bd_cliente.busca_bd(tipo, chat_id)
-            except:
-                return MSGS["list_error"]
-        else:
-            try:
-                carona = valida_horario(args[0])
-                carona.update(
-                    {"username": username,
-                     "chat_id": chat_id, "tipo": tipo, "ativo": 1})
-                try:
-                    self.bd_cliente.insere_bd(carona)
-                    data_carona = carona["horario"].time().strftime("%X")[:5]
-                    return f"Carona de Volta para às {data_carona} " + \
-                        f"oferecida por @{username}."
-                except:
-                    return MSGS["add_error"]
-            except ValueError:
-                return MSGS["invalid_time_error"]
+class Ida(BaseIdaVolta):
+    pass
 
+class Volta(BaseIdaVolta):
+    TYPE = 2
+    NOME = 'volta'
+    DESCRIPTION = f"volta_description"
 
 class Remover(BotFeature):
     NOME = "remover"
-    DESCRIPTION = " [ida/volta]: Remove da lista a sua carona, " + \
-        "conforme selecionado.\n\n"
+    DESCRIPTION = "remove_description"
 
     def processar(self, username, chat_id, args):
         if len(args) != 1 or args[0] not in ("ida", "volta"):
@@ -94,8 +76,7 @@ class Remover(BotFeature):
 
 class Caronas(BotFeature):
     NOME = "caronas"
-    DESCRIPTION = " : Lista todas as caronas ativas no momento, separadas" + \
-        " por dia, ida e volta\n\n"
+    DESCRIPTION = "caronas_description"
 
     def processar(self, username, chat_id, args):
         ida = self.bd_cliente.busca_bd(1, chat_id)
@@ -119,7 +100,8 @@ class Help(BotFeature):
         for f in features:
             if (f.NOME in ("start", "help", "sobre")):
                 continue
-            msg += str.format(MSGS["feature_line"], i, f.NOME, f.DESCRIPTION)
+            msg += str.format(MSGS["feature_line"], i,
+                              f.NOME, MSGS.get(f.DESCRIPTION, f.DESCRIPTION))
             i += 1
         msg += MSGS["help_footer"]
         return msg
@@ -127,8 +109,6 @@ class Help(BotFeature):
 
 class Sobre(BotFeature):
     NOME = "sobre"
-    
+
     def processar(self, username, chat_id, features):
         return MSGS["sobre"]
-
-

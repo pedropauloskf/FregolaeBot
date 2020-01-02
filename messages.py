@@ -24,6 +24,17 @@ MSGS = {
     "feature_line": "{0}) /{1}{2}\n",
     "sobre":
         "FregolaeBot feito com ❤️ por @pedropauloskf e @almeidakayan\n\n" +
-        "Para os interessados, código fonte disponível em "+
-        "https://github.com/pedropauloskf/FregolaeBot"
+        "Para os interessados, código fonte disponível em " +
+        "https://github.com/pedropauloskf/FregolaeBot",
+    "ida_description": " [horario]: Adiciona uma carona de ida para o fundão chegando " +
+        "lá no horário informado. Ex: /ida 12:30\nSe não for informado " +
+        "um horário, enviará a lista das caronas de ida\n\n",
+    "volta_description": " [horario]: Adiciona uma carona de volta para o fundão" +
+        " saindo de lá no horário informado. Ex: /volta 12:30\nSe" +
+        " não for informado um horário, enviará a lista das" +
+        " caronas de volta\n\n",
+    "remove_description": " [ida/volta]: Remove da lista a sua carona, " +
+        "conforme selecionado.\n\n",
+    "caronas_description": " : Lista todas as caronas ativas no momento, separadas" +
+        " por dia, ida e volta\n\n"
 }
