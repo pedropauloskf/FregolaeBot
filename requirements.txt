@@ -2,3 +2,4 @@ pymongo==3.7.2
 python-telegram-bot==11.1.0
 telepot==12.7
 pytz==2018.5
+dnspython==2.1.0
