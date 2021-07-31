@@ -7,6 +7,7 @@ from timeutil import FUSO
 
 class DbClient(ABC):
     def __init__(self, client):
+        print(client)
         self.client = MongoClient(client)
 
     # Funçao para inserir uma nova carona no banco de dados

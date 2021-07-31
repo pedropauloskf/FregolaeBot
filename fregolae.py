@@ -51,6 +51,7 @@ if __name__ == '__main__':
  #   TOKEN = os.environ.get("TEST_TOKEN")
     bot = telegram.Bot(token=TOKEN)
     updater = Updater(token=TOKEN)
+    print(MONGO, TOKEN)
     dispatcher = updater.dispatcher
     CaronaBot(MongoDbClient(MONGO))
     updater.start_polling()
